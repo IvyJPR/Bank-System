@@ -1,0 +1,402 @@
+package bankingsystem;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.HashMap;
+import java.util.Map;
+
+// User class to represent bank users
+class User {
+    String accountId;
+    String name;
+    double balance;
+    String password; // Store password for login
+
+    public User(String accountId, String name, double initialBalance, String password) {
+        this.accountId = accountId;
+        this.name = name;
+        this.balance = initialBalance;
+        this.password = password; // Store password
+    }
+}
+
+// BankSystem class to handle core banking operations
+class BankSystem {
+    private Map<String, User> users = new HashMap<>();
+
+    public String createAccount(String accountId, String name, double initialBalance, String password) {
+        if (users.containsKey(accountId)) {
+            return "Account ID already exists!";
+        }
+        users.put(accountId, new User(accountId, name, initialBalance, password));
+        return "Account created successfully for " + name + " with ID: " + accountId;
+    }
+
+    public String deposit(String accountId, double amount) {
+        User user = users.get(accountId);
+        if (user == null) {
+            return "Account does not exist!";
+        }
+        user.balance += amount;
+        return "Deposit successful! New balance: $" + user.balance;
+    }
+
+    public String withdraw(String accountId, double amount) {
+        User user = users.get(accountId);
+        if (user == null) {
+            return "Account does not exist!";
+        }
+        if (user.balance < amount) {
+            return "Insufficient balance!";
+        }
+        user.balance -= amount;
+        return "Withdrawal successful! Remaining balance: $" + user.balance;
+    }
+
+    public String getBalance(String accountId) {
+        User user = users.get(accountId);
+        if (user == null) {
+            return "Account not found!";
+        }
+        return "Account Balance: $" + user.balance;
+    }
+
+    // Check if the user exists and the password matches
+    public boolean userExists(String accountId, String password) {
+        User user = users.get(accountId);
+        return user != null && user.password.equals(password);
+    }
+}
+
+// Main BankingSystem class to display GUI and handle user interactions
+public class BankingSystem {
+    private BankSystem bankSystem;
+
+    public BankingSystem() {
+        bankSystem = new BankSystem();
+    }
+
+    public void launch() {
+        showLoginScreen();
+    }
+
+    private JPanel createGradientPanel() {
+        return new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                GradientPaint gradient = new GradientPaint(0, 0, new Color(102, 204, 255),
+                        getWidth(), getHeight(), new Color(255, 153, 204));
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+    }
+
+    private void showLoginScreen() {
+        JFrame frame = new JFrame("Login");
+        frame.setSize(400, 300);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel gradientPanel = createGradientPanel();
+        gradientPanel.setLayout(new GridLayout(4, 2, 10, 10));
+        frame.setContentPane(gradientPanel);
+
+        JLabel accountIdLabel = new JLabel("Account ID:");
+        JTextField accountIdField = new JTextField();
+        JLabel passwordLabel = new JLabel("Password:");
+        JPasswordField passwordField = new JPasswordField();
+        JButton loginButton = new JButton("Login");
+        JButton createAccountButton = new JButton("Create Account");
+
+        styleFormLabel(accountIdLabel);
+        styleFormLabel(passwordLabel);
+        styleButton(loginButton);
+        styleButton(createAccountButton);
+
+        gradientPanel.add(accountIdLabel);
+        gradientPanel.add(accountIdField);
+        gradientPanel.add(passwordLabel);
+        gradientPanel.add(passwordField);
+        gradientPanel.add(loginButton);
+        gradientPanel.add(createAccountButton);
+
+        loginButton.addActionListener(e -> {
+            String accountId = accountIdField.getText();
+            String password = new String(passwordField.getPassword());
+
+            if (bankSystem.userExists(accountId, password)) {
+                JOptionPane.showMessageDialog(frame, "Login successful!");
+                showMainMenu();
+                frame.setVisible(false);
+            } else {
+                JOptionPane.showMessageDialog(frame, "Invalid credentials, please try again.");
+            }
+        });
+
+        createAccountButton.addActionListener(e -> {
+            showCreateAccount(frame);
+            frame.setVisible(false);
+        });
+
+        frame.setVisible(true);
+    }
+
+    private void showMainMenu() {
+        JFrame frame = new JFrame("Redwood Bank");
+        frame.setSize(450, 550);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel gradientPanel = createGradientPanel();
+        gradientPanel.setLayout(new BorderLayout());
+        frame.setContentPane(gradientPanel);
+
+        JLabel title = new JLabel("Redwood Bank", JLabel.CENTER);
+        title.setFont(new Font("Serif", Font.BOLD, 32)); // Larger font size for title
+        title.setForeground(Color.DARK_GRAY);
+        title.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+        gradientPanel.add(title, BorderLayout.NORTH);
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new GridLayout(4, 1, 10, 10));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
+
+        JButton depositButton = new JButton("Deposit");
+        JButton withdrawButton = new JButton("Withdraw");
+        JButton checkBalanceButton = new JButton("Check Balance");
+
+        styleButton(depositButton);
+        styleButton(withdrawButton);
+        styleButton(checkBalanceButton);
+
+        buttonPanel.add(depositButton);
+        buttonPanel.add(withdrawButton);
+        buttonPanel.add(checkBalanceButton);
+
+        gradientPanel.add(buttonPanel, BorderLayout.CENTER);
+
+        JLabel footer = new JLabel("© 2024 Banking System", JLabel.CENTER);
+        footer.setFont(new Font("Arial", Font.PLAIN, 14)); // Slightly larger footer text
+        footer.setForeground(new Color(64, 64, 64));
+        footer.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        gradientPanel.add(footer, BorderLayout.SOUTH);
+
+        depositButton.addActionListener(e -> showDeposit(frame));
+        withdrawButton.addActionListener(e -> showWithdraw(frame));
+        checkBalanceButton.addActionListener(e -> showCheckBalance(frame));
+
+        frame.setVisible(true);
+    }
+
+    private void showCreateAccount(JFrame parentFrame) {
+        JFrame frame = new JFrame("Create Account");
+        frame.setSize(450, 350);
+
+        JPanel gradientPanel = createGradientPanel();
+        gradientPanel.setLayout(new GridLayout(6, 2, 10, 10));
+        frame.setContentPane(gradientPanel);
+
+        JLabel accountIdLabel = new JLabel("Account ID:");
+        JTextField accountIdField = new JTextField();
+        JLabel nameLabel = new JLabel("Name:");
+        JTextField nameField = new JTextField();
+        JLabel balanceLabel = new JLabel("Initial Balance:");
+        JTextField balanceField = new JTextField();
+        JLabel passwordLabel = new JLabel("Password:");
+        JPasswordField passwordField = new JPasswordField();
+        JButton createButton = new JButton("Create");
+        JLabel resultLabel = new JLabel("", JLabel.CENTER);
+
+        styleFormLabel(accountIdLabel);
+        styleFormLabel(nameLabel);
+        styleFormLabel(balanceLabel);
+        styleFormLabel(passwordLabel);
+        styleButton(createButton);
+
+        gradientPanel.add(accountIdLabel);
+        gradientPanel.add(accountIdField);
+        gradientPanel.add(nameLabel);
+        gradientPanel.add(nameField);
+        gradientPanel.add(balanceLabel);
+        gradientPanel.add(balanceField);
+        gradientPanel.add(passwordLabel);
+        gradientPanel.add(passwordField);
+        gradientPanel.add(new JLabel());
+        gradientPanel.add(createButton);
+        gradientPanel.add(resultLabel);
+
+        createButton.addActionListener(e -> {
+            String accountId = accountIdField.getText();
+            String name = nameField.getText();
+            String password = new String(passwordField.getPassword());
+
+            try {
+                double balance = Double.parseDouble(balanceField.getText());
+                String result = bankSystem.createAccount(accountId, name, balance, password);
+                resultLabel.setText(result);
+            } catch (NumberFormatException ex) {
+                resultLabel.setText("Invalid balance amount!");
+            }
+        });
+
+        frame.setVisible(true);
+        parentFrame.setVisible(false);
+        frame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                parentFrame.setVisible(true);
+            }
+        });
+    }
+
+    private void showDeposit(JFrame parentFrame) {
+        JFrame frame = new JFrame("Deposit");
+        frame.setSize(450, 300);
+
+        JPanel gradientPanel = createGradientPanel();
+        gradientPanel.setLayout(new GridLayout(4, 2, 10, 10));
+        frame.setContentPane(gradientPanel);
+
+        JLabel accountIdLabel = new JLabel("Account ID:");
+        JTextField accountIdField = new JTextField();
+        JLabel amountLabel = new JLabel("Amount:");
+        JTextField amountField = new JTextField();
+        JButton depositButton = new JButton("Deposit");
+        JLabel resultLabel = new JLabel("", JLabel.CENTER);
+
+        styleFormLabel(accountIdLabel);
+        styleFormLabel(amountLabel);
+        styleButton(depositButton);
+
+        gradientPanel.add(accountIdLabel);
+        gradientPanel.add(accountIdField);
+        gradientPanel.add(amountLabel);
+        gradientPanel.add(amountField);
+        gradientPanel.add(new JLabel());
+        gradientPanel.add(depositButton);
+        gradientPanel.add(resultLabel);
+
+        depositButton.addActionListener(e -> {
+            String accountId = accountIdField.getText();
+            try {
+                double amount = Double.parseDouble(amountField.getText());
+                String result = bankSystem.deposit(accountId, amount);
+                resultLabel.setText(result);
+            } catch (NumberFormatException ex) {
+                resultLabel.setText("Invalid amount!");
+            }
+        });
+
+        frame.setVisible(true);
+        parentFrame.setVisible(false);
+        frame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                parentFrame.setVisible(true);
+            }
+        });
+    }
+
+    private void showWithdraw(JFrame parentFrame) {
+        JFrame frame = new JFrame("Withdraw");
+        frame.setSize(450, 300);
+
+        JPanel gradientPanel = createGradientPanel();
+        gradientPanel.setLayout(new GridLayout(4, 2, 10, 10));
+        frame.setContentPane(gradientPanel);
+
+        JLabel accountIdLabel = new JLabel("Account ID:");
+        JTextField accountIdField = new JTextField();
+        JLabel amountLabel = new JLabel("Amount:");
+        JTextField amountField = new JTextField();
+        JButton withdrawButton = new JButton("Withdraw");
+        JLabel resultLabel = new JLabel("", JLabel.CENTER);
+
+        styleFormLabel(accountIdLabel);
+        styleFormLabel(amountLabel);
+        styleButton(withdrawButton);
+
+        gradientPanel.add(accountIdLabel);
+        gradientPanel.add(accountIdField);
+        gradientPanel.add(amountLabel);
+        gradientPanel.add(amountField);
+        gradientPanel.add(new JLabel());
+        gradientPanel.add(withdrawButton);
+        gradientPanel.add(resultLabel);
+
+        withdrawButton.addActionListener(e -> {
+            String accountId = accountIdField.getText();
+            try {
+                double amount = Double.parseDouble(amountField.getText());
+                String result = bankSystem.withdraw(accountId, amount);
+                resultLabel.setText(result);
+            } catch (NumberFormatException ex) {
+                resultLabel.setText("Invalid amount!");
+            }
+        });
+
+        frame.setVisible(true);
+        parentFrame.setVisible(false);
+        frame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                parentFrame.setVisible(true);
+            }
+        });
+    }
+
+    private void showCheckBalance(JFrame parentFrame) {
+        JFrame frame = new JFrame("Check Balance");
+        frame.setSize(450, 300);
+
+        JPanel gradientPanel = createGradientPanel();
+        gradientPanel.setLayout(new GridLayout(3, 2, 10, 10));
+        frame.setContentPane(gradientPanel);
+
+        JLabel accountIdLabel = new JLabel("Account ID:");
+        JTextField accountIdField = new JTextField();
+        JButton checkButton = new JButton("Check Balance");
+        JLabel resultLabel = new JLabel("", JLabel.CENTER);
+
+        styleFormLabel(accountIdLabel);
+        styleButton(checkButton);
+
+        gradientPanel.add(accountIdLabel);
+        gradientPanel.add(accountIdField);
+        gradientPanel.add(new JLabel());
+        gradientPanel.add(checkButton);
+        gradientPanel.add(resultLabel);
+
+        checkButton.addActionListener(e -> {
+            String accountId = accountIdField.getText();
+            String result = bankSystem.getBalance(accountId);
+            resultLabel.setText(result);
+        });
+
+        frame.setVisible(true);
+        parentFrame.setVisible(false);
+        frame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                parentFrame.setVisible(true);
+            }
+        });
+    }
+
+    private void styleButton(JButton button) {
+        button.setFont(new Font("Arial", Font.BOLD, 18));  // Larger font size
+        button.setBackground(new Color(255, 255, 204));
+        button.setForeground(Color.BLACK);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
+    }
+
+    private void styleFormLabel(JLabel label) {
+        label.setFont(new Font("Arial", Font.PLAIN, 18));  // Larger font size for labels
+        label.setHorizontalAlignment(JLabel.LEFT);
+    }
+
+    public static void main(String[] args) {
+        BankingSystem system = new BankingSystem();
+        system.launch();
+    }
+}
